@@ -17,6 +17,7 @@
 package org.learning.by.example.failures.testingresilience;
 
 import org.junit.jupiter.api.Test;
+import org.learning.by.example.failures.testingresilience.test.PostgreSQLStickRandomPortContainer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -42,7 +43,6 @@ public class ActuatorTestIT {
     private static final String DATABASE_NAME = "offers";
     private static final String DEFAULT_USER = "sa";
     private static final String DEFAULT_PASSWORD = "";
-
 
     private static final String HOST_CONTEXT_VARIABLE = "offers-datasource.host";
     private static final String PORT_CONTEXT_VARIABLE = "offers-datasource.port";

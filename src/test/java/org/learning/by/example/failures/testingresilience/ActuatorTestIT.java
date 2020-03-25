@@ -17,56 +17,22 @@
 package org.learning.by.example.failures.testingresilience;
 
 import org.junit.jupiter.api.Test;
-import org.learning.by.example.failures.testingresilience.test.PostgreSQLStickRandomPortContainer;
+import org.learning.by.example.failures.testingresilience.test.BasePostgreSQLTestIT;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.util.TestPropertyValues;
-import org.springframework.context.ApplicationContextInitializer;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
-
-@SpringBootTest
 @AutoConfigureWebTestClient
-@Testcontainers
-@ContextConfiguration(initializers = {ActuatorTestIT.Initializer.class})
-public class ActuatorTestIT {
+public class ActuatorTestIT extends BasePostgreSQLTestIT {
+    private static final String ACTUATOR_STATUS_DOWN = "DOWN";
+    private static final String ACTUATOR_STATUS_UP = "UP";
+    private static final String ACTUATOR_HEALTH_PATH = "/actuator/health";
+    private static final String ACTUATOR_STATUS_JSON_PATH = "$.status";
+
     @Autowired
     WebTestClient client;
-
-    private static final String DATABASE_NAME = "offers";
-    private static final String DEFAULT_USER = "sa";
-    private static final String DEFAULT_PASSWORD = "";
-
-    private static final String HOST_CONTEXT_VARIABLE = "offers-datasource.host";
-    private static final String PORT_CONTEXT_VARIABLE = "offers-datasource.port";
-
-    public static final String ACTUATOR_STATUS_DOWN = "DOWN";
-    public static final String ACTUATOR_STATUS_UP = "UP";
-    public static final String ACTUATOR_HEALTH_PATH = "/actuator/health";
-    public static final String ACTUATOR_STATUS_JSON_PATH = "$.status";
-
-    @SuppressWarnings("rawtypes")
-    @Container
-    public static final PostgreSQLStickRandomPortContainer dbContainer = new PostgreSQLStickRandomPortContainer<>()
-        .withUsername(DEFAULT_USER)
-        .withPassword(DEFAULT_PASSWORD)
-        .withDatabaseName(DATABASE_NAME);
-
-    static class Initializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
-        public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
-            TestPropertyValues.of(
-                HOST_CONTEXT_VARIABLE + "=" + dbContainer.getContainerIpAddress(),
-                PORT_CONTEXT_VARIABLE + "=" + dbContainer.getRandomStickPort()
-            ).applyTo(configurableApplicationContext.getEnvironment());
-        }
-    }
 
     @Test
     void whenDatabaseIsUpActuatorShouldBeUP() {
@@ -89,17 +55,6 @@ public class ActuatorTestIT {
         assertThatActuatorIsUp();
     }
 
-    private static void stopDatabase() {
-        if (dbContainer.isRunning()) {
-            dbContainer.stop();
-        }
-    }
-
-    private void startDatabase() {
-        if (!dbContainer.isRunning()) {
-            dbContainer.start();
-        }
-    }
 
     void assertActuator(final HttpStatus status) {
         final String actuatorStatusText;

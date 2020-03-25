@@ -6,7 +6,7 @@ offers-datasource:
     credentials:
         user: "sa"
         password: ""
-    read-only: true
+    read-only: false
     pool:
         connections:
             min: 1

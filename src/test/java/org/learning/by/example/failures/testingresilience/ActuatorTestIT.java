@@ -16,6 +16,7 @@
 
 package org.learning.by.example.failures.testingresilience;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.learning.by.example.failures.testingresilience.test.BasePostgreSQLTestIT;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,18 +36,21 @@ public class ActuatorTestIT extends BasePostgreSQLTestIT {
     WebTestClient client;
 
     @Test
+    @DisplayName("When database is up actuator should be up")
     void whenDatabaseIsUpActuatorShouldBeUP() {
         startDatabase();
         assertThatActuatorIsUp();
     }
 
     @Test
+    @DisplayName("When database is down actuator should be down")
     void whenDatabaseIsDownActuatorShouldBeDown() {
         stopDatabase();
         assertThatActuatorIsDown();
     }
 
     @Test
+    @DisplayName("When database is down and then up actuator should be up")
     void whenDatabaseIsDownAndThenUpActuatorShouldBeUp() {
         stopDatabase();
         assertThatActuatorIsDown();

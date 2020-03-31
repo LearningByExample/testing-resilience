@@ -16,6 +16,7 @@
 
 package org.learning.by.example.failures.testingresilience;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -23,6 +24,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 class TestingResilienceApplicationTests {
 
     @Test
+    @DisplayName("Application context should load")
     void contextLoads() {
     }
 }

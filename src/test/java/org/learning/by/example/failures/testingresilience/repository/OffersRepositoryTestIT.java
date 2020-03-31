@@ -1,6 +1,7 @@
 package org.learning.by.example.failures.testingresilience.repository;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.learning.by.example.failures.testingresilience.test.BasePostgreSQLTestIT;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,7 @@ class OffersRepositoryTestIT extends BasePostgreSQLTestIT {
     }
 
     @Test
+    @DisplayName("When requesting all offers we should get them all")
     void whenRequestingAllOffersWeShouldGetThemAll() {
         final List<Offer> offers = Arrays.asList(
             new Offer(1, "Super Bread", 100.0f),
@@ -42,6 +44,7 @@ class OffersRepositoryTestIT extends BasePostgreSQLTestIT {
     }
 
     @Test
+    @DisplayName("When requesting all and database stop weShould get an error")
     void whenRequestingAllAndDatabaseStopWeShouldGetAnError() {
         stopDatabase();
         repository.findAll()

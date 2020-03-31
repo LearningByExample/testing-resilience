@@ -140,7 +140,7 @@ class OffersServiceImplTest {
 
 
     @Test
-    @DisplayName("is ready should work based if we have fallback")
+    @DisplayName("is ready should work based if we have fallback once")
     void isReadyShouldWorkBasedIfWeHaveFallback() {
         offersService.clearFallBack();
 
@@ -150,13 +150,18 @@ class OffersServiceImplTest {
 
         reset(offersRepository);
 
-        offersService.clearFallBack();
         final List<Offer> fallBackOffers = Arrays.asList(
             new Offer(1, "FallBack1", 100.0f),
             new Offer(2, "Fall Back 2", 1.0f)
         );
 
         when(offersRepository.findAll()).thenReturn(Flux.fromIterable(fallBackOffers));
+
+        assertThat(offersService.isReady()).isTrue();
+
+        reset(offersRepository);
+
+        when(offersRepository.findAll()).thenReturn(Flux.error(new Exception("something wrong happen")));
 
         assertThat(offersService.isReady()).isTrue();
 

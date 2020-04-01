@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.when;
 
@@ -40,7 +39,7 @@ class OffersServiceImplTest {
     @Test
     @DisplayName("Getting offers repository works and fallback is empty")
     void gettingOffersRepositoryWorksAndFallbackIsEmpty() {
-        offersService.clearFallback();
+        offersService.reset();
 
         when(offersRepository.findAll()).thenReturn(Flux.fromIterable(MOCK_OFFERS));
 
@@ -60,11 +59,16 @@ class OffersServiceImplTest {
     @Test
     @DisplayName("Getting offers repository works and fallback is not empty")
     void gettingOffersRepositoryWorksAndFallbackIsNotEmpty() {
-        offersService.clearFallback();
+        offersService.reset();
 
         when(offersRepository.findAll()).thenReturn(Flux.fromIterable(FALLBACK_OFFERS));
 
-        offersService.prepareFallback();
+        offersService.isReady()
+            .as(StepVerifier::create)
+            .expectSubscription()
+            .expectNext(true)
+            .expectComplete()
+            .verify();
 
         reset(offersRepository);
 
@@ -86,7 +90,7 @@ class OffersServiceImplTest {
     @Test
     @DisplayName("Getting offers repository fails and Fallback is empty")
     void gettingOffersRepositoryFailsAndFallbackIsEmpty() {
-        offersService.clearFallback();
+        offersService.reset();
         when(offersRepository.findAll()).thenReturn(Flux.error(new Exception("something wrong happen")));
 
         offersService.getOffers()
@@ -103,11 +107,16 @@ class OffersServiceImplTest {
     @Test
     @DisplayName("Getting offers repository fails and Fallback is not empty")
     void gettingOffersRepositoryFailsAndFallBackIsNotEmpty() {
-        offersService.clearFallback();
+        offersService.reset();
 
         when(offersRepository.findAll()).thenReturn(Flux.fromIterable(FALLBACK_OFFERS));
 
-        offersService.prepareFallback();
+        offersService.isReady()
+            .as(StepVerifier::create)
+            .expectSubscription()
+            .expectNext(true)
+            .expectComplete()
+            .verify();
 
         reset(offersRepository);
 
@@ -130,23 +139,38 @@ class OffersServiceImplTest {
     @Test
     @DisplayName("is ready should work based if we have fallback once")
     void isReadyShouldWorkBasedIfWeHaveFallback() {
-        offersService.clearFallback();
+        offersService.reset();
 
         when(offersRepository.findAll()).thenReturn(Flux.error(new Exception("something wrong happen")));
 
-        assertThat(offersService.isReady()).isFalse();
+        offersService.isReady()
+            .as(StepVerifier::create)
+            .expectSubscription()
+            .expectNext(false)
+            .expectComplete()
+            .verify();
 
         reset(offersRepository);
 
         when(offersRepository.findAll()).thenReturn(Flux.fromIterable(FALLBACK_OFFERS));
 
-        assertThat(offersService.isReady()).isTrue();
+        offersService.isReady()
+            .as(StepVerifier::create)
+            .expectSubscription()
+            .expectNext(true)
+            .expectComplete()
+            .verify();
 
         reset(offersRepository);
 
         when(offersRepository.findAll()).thenReturn(Flux.error(new Exception("something wrong happen")));
 
-        assertThat(offersService.isReady()).isTrue();
+        offersService.isReady()
+            .as(StepVerifier::create)
+            .expectSubscription()
+            .expectNext(true)
+            .expectComplete()
+            .verify();
 
         reset(offersRepository);
     }

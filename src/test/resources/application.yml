@@ -22,3 +22,7 @@ spring:
         banner-mode: console
     jmx:
         enabled: true
+management:
+    health:
+        r2dbc:
+            enabled: false

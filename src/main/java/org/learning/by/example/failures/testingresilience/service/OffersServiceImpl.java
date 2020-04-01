@@ -8,11 +8,11 @@ import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreaker;
 import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreakerFactory;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 @Component
@@ -39,32 +39,23 @@ public class OffersServiceImpl implements OffersService {
         });
     }
 
-    public void clearFallback() {
-        this.offersFallback.clear();
-    }
-
-    public void setFallback(final Collection<Offer> fallBack){
-        clearFallback();
+    private void setFallback(final Collection<Offer> fallBack) {
+        reset();
         this.offersFallback.addAll(fallBack);
     }
 
-    public void prepareFallback() {
-        final List<Offer> offers = getOfferWithFallback(emptyOffers).collectList().block();
-        if (Objects.requireNonNull(offers).size() > 0) {
-            setFallback(offers);
-        }
-    }
-
-    private boolean hasFallback() {
-        return this.offersFallback.size() > 0;
-    }
-
     @Override
-    public boolean isReady() {
-        if (!hasFallback()) {
-            prepareFallback();
-        }
-        return hasFallback();
+    public Mono<Boolean> isReady() {
+        return getOfferWithFallback(emptyOffers).collectList().map(offers -> {
+            if (offers.size() > 0) {
+                setFallback(offers);
+            }
+            return this.offersFallback.size() > 0;
+        });
+    }
+
+    public void reset() {
+        this.offersFallback.clear();
     }
 
     @Override

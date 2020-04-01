@@ -36,29 +36,19 @@ public class ActuatorTestIT extends BasePostgreSQLTestIT {
     WebTestClient client;
 
     @Test
-    @DisplayName("When database is up actuator should be up")
-    void whenDatabaseIsUpActuatorShouldBeUP() {
-        startDatabase();
-        assertThatActuatorIsUp();
-    }
-
-    @Test
-    @DisplayName("When database is down actuator should be down")
-    void whenDatabaseIsDownActuatorShouldBeDown() {
-        stopDatabase();
-        assertThatActuatorIsDown();
-    }
-
-    @Test
-    @DisplayName("When database is down and then up actuator should be up")
-    void whenDatabaseIsDownAndThenUpActuatorShouldBeUp() {
+    @DisplayName("Once we have connect to the database we should not fail when going down")
+    void whenDatabaseIsUpActuatorShouldBeUP() throws Exception {
         stopDatabase();
         assertThatActuatorIsDown();
 
         startDatabase();
+        loadSQL("sql/schema.sql");
+        loadSQL("sql/data.sql");
+        assertThatActuatorIsUp();
+
+        stopDatabase();
         assertThatActuatorIsUp();
     }
-
 
     void assertActuator(final HttpStatus status) {
         final String actuatorStatusText;

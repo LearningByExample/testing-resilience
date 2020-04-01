@@ -26,26 +26,31 @@ class OffersServiceImplTest {
     @MockBean
     OffersRepository offersRepository;
 
+    private static final List<Offer> MOCK_OFFERS = Arrays.asList(
+        new Offer(1, "Super Bread", 100.0f),
+        new Offer(2, "Chocolate Donuts", 1.0f),
+        new Offer(3, "Blueberry Muffins", 1.50f),
+        new Offer(4, "Croissants", 3.0f)
+    );
+    private static final List<Offer> FALL_BACK_OFFERS = Arrays.asList(
+        new Offer(1, "Fall Back 1", 100.0f),
+        new Offer(2, "Fall Back 2", 1.0f)
+    );
+
     @Test
     @DisplayName("Getting offers repository works and fall back is empty")
     void gettingOffersRepositoryWorksAndFallBackIsEmpty() {
         offersService.clearFallBack();
-        final List<Offer> offers = Arrays.asList(
-            new Offer(1, "Super Bread", 100.0f),
-            new Offer(2, "Chocolate Donuts", 1.0f),
-            new Offer(3, "Blueberry Muffins", 1.50f),
-            new Offer(4, "Croissants", 3.0f)
-        );
 
-        when(offersRepository.findAll()).thenReturn(Flux.fromIterable(offers));
+        when(offersRepository.findAll()).thenReturn(Flux.fromIterable(MOCK_OFFERS));
 
         offersService.getOffers()
             .as(StepVerifier::create)
             .expectSubscription()
             .recordWith(ArrayList::new)
             .thenRequest(Long.MAX_VALUE)
-            .expectNextCount(offers.size())
-            .expectRecordedMatches(offers::containsAll)
+            .expectNextCount(MOCK_OFFERS.size())
+            .expectRecordedMatches(MOCK_OFFERS::containsAll)
             .expectComplete()
             .verify();
 
@@ -57,33 +62,21 @@ class OffersServiceImplTest {
     void gettingOffersRepositoryWorksAndFallBackIsNotEmpty() {
         offersService.clearFallBack();
 
-        final List<Offer> fallBackOffers = Arrays.asList(
-            new Offer(1, "FallBack1", 100.0f),
-            new Offer(2, "Fall Back 2", 1.0f)
-        );
-
-        when(offersRepository.findAll()).thenReturn(Flux.fromIterable(fallBackOffers));
+        when(offersRepository.findAll()).thenReturn(Flux.fromIterable(FALL_BACK_OFFERS));
 
         offersService.prepareFallBack();
 
         reset(offersRepository);
 
-        final List<Offer> offers = Arrays.asList(
-            new Offer(1, "Super Bread", 100.0f),
-            new Offer(2, "Chocolate Donuts", 1.0f),
-            new Offer(3, "Blueberry Muffins", 1.50f),
-            new Offer(4, "Croissants", 3.0f)
-        );
-
-        when(offersRepository.findAll()).thenReturn(Flux.fromIterable(offers));
+        when(offersRepository.findAll()).thenReturn(Flux.fromIterable(MOCK_OFFERS));
 
         offersService.getOffers()
             .as(StepVerifier::create)
             .expectSubscription()
             .recordWith(ArrayList::new)
             .thenRequest(Long.MAX_VALUE)
-            .expectNextCount(offers.size())
-            .expectRecordedMatches(offers::containsAll)
+            .expectNextCount(MOCK_OFFERS.size())
+            .expectRecordedMatches(MOCK_OFFERS::containsAll)
             .expectComplete()
             .verify();
 
@@ -112,12 +105,7 @@ class OffersServiceImplTest {
     void gettingOffersRepositoryFailsAndFallBackIsNotEmpty() {
         offersService.clearFallBack();
 
-        final List<Offer> fallBackOffers = Arrays.asList(
-            new Offer(1, "FallBack1", 100.0f),
-            new Offer(2, "Fall Back 2", 1.0f)
-        );
-
-        when(offersRepository.findAll()).thenReturn(Flux.fromIterable(fallBackOffers));
+        when(offersRepository.findAll()).thenReturn(Flux.fromIterable(FALL_BACK_OFFERS));
 
         offersService.prepareFallBack();
 
@@ -130,8 +118,8 @@ class OffersServiceImplTest {
             .expectSubscription()
             .recordWith(ArrayList::new)
             .thenRequest(Long.MAX_VALUE)
-            .expectNextCount(fallBackOffers.size())
-            .expectRecordedMatches(fallBackOffers::containsAll)
+            .expectNextCount(FALL_BACK_OFFERS.size())
+            .expectRecordedMatches(FALL_BACK_OFFERS::containsAll)
             .expectComplete()
             .verify();
 
@@ -150,12 +138,7 @@ class OffersServiceImplTest {
 
         reset(offersRepository);
 
-        final List<Offer> fallBackOffers = Arrays.asList(
-            new Offer(1, "FallBack1", 100.0f),
-            new Offer(2, "Fall Back 2", 1.0f)
-        );
-
-        when(offersRepository.findAll()).thenReturn(Flux.fromIterable(fallBackOffers));
+        when(offersRepository.findAll()).thenReturn(Flux.fromIterable(FALL_BACK_OFFERS));
 
         assertThat(offersService.isReady()).isTrue();
 

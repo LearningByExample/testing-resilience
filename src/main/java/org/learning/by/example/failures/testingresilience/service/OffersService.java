@@ -5,6 +5,5 @@ import reactor.core.publisher.Flux;
 
 public interface OffersService {
     Flux<Offer> getOffers();
-
     boolean isReady();
 }

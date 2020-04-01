@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -20,27 +21,15 @@ public class OffersServiceImpl implements OffersService {
     private static final String CIRCUIT_BREAKER_ID = "OffersServiceImplCircuit";
     private static final List<Offer> emptyOffers = new ArrayList<>();
 
-    private final ConcurrentLinkedDeque<Offer> offersFallBack;
+    private final ConcurrentLinkedDeque<Offer> offersFallback;
     private final OffersRepository offersRepository;
     private final ReactiveCircuitBreaker circuitBreaker;
 
     @SuppressWarnings("rawtypes")
-    public OffersServiceImpl(final OffersRepository offersRepository, ReactiveCircuitBreakerFactory reactiveCircuitBreakerFactory) {
+    public OffersServiceImpl(final OffersRepository offersRepository, final ReactiveCircuitBreakerFactory reactiveCircuitBreakerFactory) {
         this.offersRepository = offersRepository;
         this.circuitBreaker = reactiveCircuitBreakerFactory.create(CIRCUIT_BREAKER_ID);
-        this.offersFallBack = new ConcurrentLinkedDeque<>(emptyOffers);
-    }
-
-    public void prepareFallBack() {
-        final List<Offer> offers = getOfferWithFallback(emptyOffers).collectList().block();
-        if (Objects.requireNonNull(offers).size() > 0) {
-            clearFallBack();
-            this.offersFallBack.addAll(offers);
-        }
-    }
-
-    public void clearFallBack() {
-        this.offersFallBack.clear();
+        this.offersFallback = new ConcurrentLinkedDeque<>(emptyOffers);
     }
 
     private Flux<Offer> getOfferWithFallback(final Iterable<Offer> fallback) {
@@ -50,20 +39,36 @@ public class OffersServiceImpl implements OffersService {
         });
     }
 
-    @Override
-    public Flux<Offer> getOffers() {
-        return getOfferWithFallback(offersFallBack);
+    public void clearFallback() {
+        this.offersFallback.clear();
+    }
+
+    public void setFallback(final Collection<Offer> fallBack){
+        clearFallback();
+        this.offersFallback.addAll(fallBack);
+    }
+
+    public void prepareFallback() {
+        final List<Offer> offers = getOfferWithFallback(emptyOffers).collectList().block();
+        if (Objects.requireNonNull(offers).size() > 0) {
+            setFallback(offers);
+        }
     }
 
     private boolean hasFallback() {
-        return this.offersFallBack.size() > 0;
+        return this.offersFallback.size() > 0;
     }
 
     @Override
     public boolean isReady() {
         if (!hasFallback()) {
-            prepareFallBack();
+            prepareFallback();
         }
         return hasFallback();
+    }
+
+    @Override
+    public Flux<Offer> getOffers() {
+        return getOfferWithFallback(offersFallback);
     }
 }

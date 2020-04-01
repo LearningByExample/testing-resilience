@@ -32,15 +32,15 @@ class OffersServiceImplTest {
         new Offer(3, "Blueberry Muffins", 1.50f),
         new Offer(4, "Croissants", 3.0f)
     );
-    private static final List<Offer> FALL_BACK_OFFERS = Arrays.asList(
-        new Offer(1, "Fall Back 1", 100.0f),
-        new Offer(2, "Fall Back 2", 1.0f)
+    private static final List<Offer> FALLBACK_OFFERS = Arrays.asList(
+        new Offer(1, "Fallback 1", 100.0f),
+        new Offer(2, "Fallback 2", 1.0f)
     );
 
     @Test
-    @DisplayName("Getting offers repository works and fall back is empty")
-    void gettingOffersRepositoryWorksAndFallBackIsEmpty() {
-        offersService.clearFallBack();
+    @DisplayName("Getting offers repository works and fallback is empty")
+    void gettingOffersRepositoryWorksAndFallbackIsEmpty() {
+        offersService.clearFallback();
 
         when(offersRepository.findAll()).thenReturn(Flux.fromIterable(MOCK_OFFERS));
 
@@ -58,13 +58,13 @@ class OffersServiceImplTest {
     }
 
     @Test
-    @DisplayName("Getting offers repository works and fall back is not empty")
-    void gettingOffersRepositoryWorksAndFallBackIsNotEmpty() {
-        offersService.clearFallBack();
+    @DisplayName("Getting offers repository works and fallback is not empty")
+    void gettingOffersRepositoryWorksAndFallbackIsNotEmpty() {
+        offersService.clearFallback();
 
-        when(offersRepository.findAll()).thenReturn(Flux.fromIterable(FALL_BACK_OFFERS));
+        when(offersRepository.findAll()).thenReturn(Flux.fromIterable(FALLBACK_OFFERS));
 
-        offersService.prepareFallBack();
+        offersService.prepareFallback();
 
         reset(offersRepository);
 
@@ -85,8 +85,8 @@ class OffersServiceImplTest {
 
     @Test
     @DisplayName("Getting offers repository fails and Fallback is empty")
-    void gettingOffersRepositoryFailsAndFallBackIsEmpty() {
-        offersService.clearFallBack();
+    void gettingOffersRepositoryFailsAndFallbackIsEmpty() {
+        offersService.clearFallback();
         when(offersRepository.findAll()).thenReturn(Flux.error(new Exception("something wrong happen")));
 
         offersService.getOffers()
@@ -103,11 +103,11 @@ class OffersServiceImplTest {
     @Test
     @DisplayName("Getting offers repository fails and Fallback is not empty")
     void gettingOffersRepositoryFailsAndFallBackIsNotEmpty() {
-        offersService.clearFallBack();
+        offersService.clearFallback();
 
-        when(offersRepository.findAll()).thenReturn(Flux.fromIterable(FALL_BACK_OFFERS));
+        when(offersRepository.findAll()).thenReturn(Flux.fromIterable(FALLBACK_OFFERS));
 
-        offersService.prepareFallBack();
+        offersService.prepareFallback();
 
         reset(offersRepository);
 
@@ -118,8 +118,8 @@ class OffersServiceImplTest {
             .expectSubscription()
             .recordWith(ArrayList::new)
             .thenRequest(Long.MAX_VALUE)
-            .expectNextCount(FALL_BACK_OFFERS.size())
-            .expectRecordedMatches(FALL_BACK_OFFERS::containsAll)
+            .expectNextCount(FALLBACK_OFFERS.size())
+            .expectRecordedMatches(FALLBACK_OFFERS::containsAll)
             .expectComplete()
             .verify();
 
@@ -130,7 +130,7 @@ class OffersServiceImplTest {
     @Test
     @DisplayName("is ready should work based if we have fallback once")
     void isReadyShouldWorkBasedIfWeHaveFallback() {
-        offersService.clearFallBack();
+        offersService.clearFallback();
 
         when(offersRepository.findAll()).thenReturn(Flux.error(new Exception("something wrong happen")));
 
@@ -138,7 +138,7 @@ class OffersServiceImplTest {
 
         reset(offersRepository);
 
-        when(offersRepository.findAll()).thenReturn(Flux.fromIterable(FALL_BACK_OFFERS));
+        when(offersRepository.findAll()).thenReturn(Flux.fromIterable(FALLBACK_OFFERS));
 
         assertThat(offersService.isReady()).isTrue();
 

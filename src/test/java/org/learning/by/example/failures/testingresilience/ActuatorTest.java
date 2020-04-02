@@ -18,15 +18,22 @@ package org.learning.by.example.failures.testingresilience;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.learning.by.example.failures.testingresilience.test.BasePostgreSQLTestIT;
+import org.learning.by.example.failures.testingresilience.service.OffersService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Mono;
 
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.when;
+
+@SpringBootTest
 @AutoConfigureWebTestClient
-public class ActuatorTestIT extends BasePostgreSQLTestIT {
+public class ActuatorTest {
     private static final String ACTUATOR_STATUS_DOWN = "DOWN";
     private static final String ACTUATOR_STATUS_UP = "UP";
     private static final String ACTUATOR_HEALTH_PATH = "/actuator/health";
@@ -35,19 +42,27 @@ public class ActuatorTestIT extends BasePostgreSQLTestIT {
     @Autowired
     WebTestClient client;
 
+    @MockBean
+    OffersService offersService;
+
     @Test
-    @DisplayName("Once we have connect to the database we should not fail when going down")
-    void whenDatabaseIsUpActuatorShouldBeUP() throws Exception {
-        stopDatabase();
+    @DisplayName("When the offers service is not ready actuator is down")
+    void whenTheOffersServiceIsNotReadyActuatorIsDown() {
+        when(offersService.isReady()).thenReturn(Mono.just(false));
+
         assertThatActuatorIsDown();
 
-        startDatabase();
-        loadSQL("sql/schema.sql");
-        loadSQL("sql/data.sql");
+        reset(offersService);
+    }
+
+    @Test
+    @DisplayName("When the offers service is ready actuator is up")
+    void whenTheOffersServiceIsReadyActuatorIsUp() {
+        when(offersService.isReady()).thenReturn(Mono.just(true));
+
         assertThatActuatorIsUp();
 
-        stopDatabase();
-        assertThatActuatorIsUp();
+        reset(offersService);
     }
 
     void assertActuator(final HttpStatus status) {

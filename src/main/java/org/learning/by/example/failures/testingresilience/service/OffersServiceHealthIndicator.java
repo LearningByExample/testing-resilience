@@ -13,13 +13,14 @@ public class OffersServiceHealthIndicator implements ReactiveHealthIndicator {
         this.offersService = offersService;
     }
 
+    private static Health readyToHealth(final boolean ready) {
+        final Health.Builder healthBuilder = new Health.Builder();
+        final Health.Builder status = ready ? healthBuilder.up() : healthBuilder.down();
+        return status.build();
+    }
+
     @Override
     public Mono<Health> health() {
-        return offersService.isReady().map(ready -> {
-            if (ready) {
-                return new Health.Builder().up().build();
-            }
-            return new Health.Builder().down().build();
-        });
+        return offersService.isReady().map(OffersServiceHealthIndicator::readyToHealth);
     }
 }

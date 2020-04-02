@@ -32,11 +32,14 @@ public class OffersServiceImpl implements OffersService {
         this.offersFallback = new ConcurrentLinkedDeque<>(emptyOffers);
     }
 
+    private static Flux<Offer> throwableToFallBack(final Throwable throwable, final Iterable<Offer> fallback) {
+        LOGGER.warn("error getting offers, returning fallback", throwable);
+        return Flux.fromIterable(fallback);
+    }
+
     private Flux<Offer> getOfferWithFallback(final Iterable<Offer> fallback) {
-        return circuitBreaker.run(offersRepository.findAll(), throwable -> {
-            LOGGER.warn("error getting offers, returning fallback", throwable);
-            return Flux.fromIterable(fallback);
-        });
+        return circuitBreaker.run(offersRepository.findAll(),
+            throwable -> OffersServiceImpl.throwableToFallBack(throwable, fallback));
     }
 
     private void setFallback(final Collection<Offer> fallBack) {
@@ -44,14 +47,16 @@ public class OffersServiceImpl implements OffersService {
         this.offersFallback.addAll(fallBack);
     }
 
+    private boolean offersListToBoolean(final List<Offer> offers) {
+        if (offers.size() > 0) {
+            setFallback(offers);
+        }
+        return this.offersFallback.size() > 0;
+    }
+
     @Override
     public Mono<Boolean> isReady() {
-        return getOfferWithFallback(emptyOffers).collectList().map(offers -> {
-            if (offers.size() > 0) {
-                setFallback(offers);
-            }
-            return this.offersFallback.size() > 0;
-        });
+        return getOfferWithFallback(emptyOffers).collectList().map(this::offersListToBoolean);
     }
 
     public void reset() {

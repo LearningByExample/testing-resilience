@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package org.learning.by.example.failures.testingresilience;
+package org.learning.by.example.failures.testingresilience.service;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.learning.by.example.failures.testingresilience.service.OffersService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -33,7 +32,7 @@ import static org.mockito.Mockito.when;
 
 @SpringBootTest
 @AutoConfigureWebTestClient
-public class ActuatorTest {
+public class OffersServiceHealthIndicatorTest {
     private static final String ACTUATOR_STATUS_DOWN = "DOWN";
     private static final String ACTUATOR_STATUS_UP = "UP";
     private static final String ACTUATOR_HEALTH_PATH = "/actuator/health";

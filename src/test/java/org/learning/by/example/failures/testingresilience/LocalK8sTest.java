@@ -3,6 +3,9 @@ package org.learning.by.example.failures.testingresilience;
 import org.junit.jupiter.api.Test;
 import org.learning.by.example.failures.testingresilience.test.BaseK8sTest;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static org.awaitility.Awaitility.await;
+
 public class LocalK8sTest extends BaseK8sTest {
     public LocalK8sTest() throws K8sTestException {
         super();
@@ -10,8 +13,9 @@ public class LocalK8sTest extends BaseK8sTest {
 
     @Test
     public void oneTest() throws Exception {
-        if(podsExists()){
+        if (podsExists()) {
             deletePods();
+            await().atMost(1, MINUTES).until(() -> !podsExists());
         }
         createDatabase();
     }

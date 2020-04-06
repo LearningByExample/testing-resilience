@@ -1,5 +1,6 @@
 package org.learning.by.example.failures.testingresilience.test;
 
+import com.google.gson.JsonSyntaxException;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
@@ -55,14 +56,16 @@ public class BaseK8sTest {
 
     public boolean podsExists() throws K8sTestException {
         LOGGER.info("checking if pod exist");
-        return getPods().size() > 0;
+        final boolean result = getPods().size() > 0;
+        LOGGER.info("pod exists: {}", result);
+        return result;
     }
 
     public void deletePods() throws K8sTestException {
         LOGGER.info("deleting pods");
         try {
             for (final V1Pod pod : getPods()) {
-                LOGGER.info("deleting pod {}", Objects.requireNonNull(pod.getMetadata()).getName());
+                LOGGER.info("deleting pod: {}", Objects.requireNonNull(pod.getMetadata()).getName());
 
                 final V1DeleteOptions v1DeleteOptions = new V1DeleteOptions();
                 v1DeleteOptions.setApiVersion("v1");
@@ -71,6 +74,8 @@ public class BaseK8sTest {
             }
         } catch (final ApiException ex) {
             throw new K8sTestException(ex.getResponseBody(), ex);
+        } catch (final JsonSyntaxException ignore) {
+            LOGGER.warn("ignoring JsonSyntaxException due bug on kubernetes Swagger api https://github.com/kubernetes-client/java/issues/252");
         }
     }
 

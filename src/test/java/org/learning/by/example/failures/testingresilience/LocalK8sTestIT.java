@@ -8,8 +8,8 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.awaitility.Awaitility.await;
 
-public class LocalK8sTest extends BaseK8sTest {
-    public LocalK8sTest() throws K8sTestException {
+public class LocalK8sTestIT extends BaseK8sTest {
+    public LocalK8sTestIT() throws K8sTestException {
         super();
     }
 

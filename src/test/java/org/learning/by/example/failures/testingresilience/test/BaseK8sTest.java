@@ -1,11 +1,10 @@
 package org.learning.by.example.failures.testingresilience.test;
 
-import com.google.gson.JsonSyntaxException;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
+import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
-import io.kubernetes.client.openapi.apis.ExtensionsV1beta1Api;
 import io.kubernetes.client.openapi.models.*;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.KubeConfig;
@@ -15,25 +14,24 @@ import org.slf4j.LoggerFactory;
 import java.io.FileReader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 
 public class BaseK8sTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseK8sTest.class);
     private static final String HOME_PROPERTY = "user.home";
     private static final String KUBE_CONFIG = "/.kube/config";
-    private static final String DEFAULT_NAME_SPACE = "default";
-    private static final String POSTGRES_POD = "test-postgres";
-    private static final String POSTGRES_IMG = "test-postgres-img";
-    private static final String APP_NAME = "testing-resilience";
-    private static final String POSTGRES_BASE_IMAGE = "postgres:9.6.12";
+
 
     private final CoreV1Api api;
-    private final ExtensionsV1beta1Api extensionV1Api;
+    final AppsV1Api appsV1Api;
 
     public BaseK8sTest() throws K8sTestException {
-        api = getK8sApi();
-        extensionV1Api = new ExtensionsV1beta1Api();
-        extensionV1Api.setApiClient(api.getApiClient());
+        this.api = getK8sApi();
+        this.appsV1Api = new AppsV1Api();
+        this.appsV1Api.setApiClient(api.getApiClient());
     }
 
     public static class K8sTestException extends Exception {
@@ -42,6 +40,7 @@ public class BaseK8sTest {
         }
     }
 
+    /*
     private List<V1Pod> getPods() throws K8sTestException {
         LOGGER.info("getting pods");
         final String label = "app=" + APP_NAME;
@@ -77,8 +76,62 @@ public class BaseK8sTest {
         } catch (final JsonSyntaxException ignore) {
             LOGGER.warn("ignoring JsonSyntaxException due bug on kubernetes Swagger api https://github.com/kubernetes-client/java/issues/252");
         }
+    }*/
+
+    public void createDeployment(final String namespace, final String appName, final String deploymentName, final String image, int exposedPort, int replicas) throws K8sTestException {
+        // deployment
+        final V1Deployment deployment = new V1Deployment();
+
+        // deployment meta-data
+        final V1ObjectMeta metadata = new V1ObjectMeta();
+        metadata.setName(deploymentName);
+        final HashMap<String, String> labels = new HashMap<>();
+        labels.put("app", appName);
+        metadata.setLabels(labels);
+        deployment.setMetadata(metadata);
+
+        // deployment spec
+        final V1DeploymentSpec spec = new V1DeploymentSpec();
+        final V1LabelSelector labelSelector = new V1LabelSelector();
+        labelSelector.setMatchLabels(labels);
+        spec.setSelector(labelSelector);
+
+        // template spec
+        final V1PodTemplateSpec podTemplateSpec = new V1PodTemplateSpec();
+        podTemplateSpec.setMetadata(metadata);
+
+        // pod spec
+        final V1PodSpec podSpec = new V1PodSpec();
+        final List<V1Container> containers = new ArrayList<>();
+
+        // container
+        final V1Container container = new V1Container();
+        container.setName(deploymentName);
+        container.setImage(image);
+
+        //port
+        V1ContainerPort port = new V1ContainerPort();
+        port.containerPort(exposedPort);
+        container.setPorts(Collections.singletonList(port));
+
+        containers.add(container);
+        podSpec.setContainers(containers);
+        podTemplateSpec.setSpec(podSpec);
+
+        spec.setTemplate(podTemplateSpec);
+        deployment.setSpec(spec);
+
+        // replicas
+        spec.setReplicas(replicas);
+
+        try {
+            appsV1Api.createNamespacedDeployment(namespace, deployment, null, null, null);
+        } catch (final ApiException ex) {
+            throw new K8sTestException(ex.getResponseBody(), ex);
+        }
     }
 
+    /*
     public void createDatabase() throws K8sTestException {
         LOGGER.info("creating database");
         final V1Pod pod = new V1Pod();
@@ -108,7 +161,7 @@ public class BaseK8sTest {
         } catch (final ApiException ex) {
             throw new K8sTestException(ex.getResponseBody(), ex);
         }
-    }
+    }*/
 
     private CoreV1Api getK8sApi() throws K8sTestException {
         LOGGER.info("connecting to K8s cluster");

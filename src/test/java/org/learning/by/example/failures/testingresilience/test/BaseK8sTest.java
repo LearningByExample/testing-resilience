@@ -4,7 +4,6 @@ import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.AppsV1Api;
-import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.*;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.KubeConfig;
@@ -24,13 +23,10 @@ public class BaseK8sTest {
     private static final String IMAGE_PULL_POLICY_ALWAYS = "Always";
 
 
-    private final CoreV1Api api;
     final AppsV1Api appsV1Api;
 
     public BaseK8sTest() throws K8sTestException {
-        this.api = getK8sApi();
-        this.appsV1Api = new AppsV1Api();
-        this.appsV1Api.setApiClient(api.getApiClient());
+        this.appsV1Api = getK8sApi();
     }
 
     public static class K8sTestException extends Exception {
@@ -106,7 +102,7 @@ public class BaseK8sTest {
         container.setImagePullPolicy(IMAGE_PULL_POLICY_ALWAYS);
 
         //port
-        V1ContainerPort port = new V1ContainerPort();
+        final V1ContainerPort port = new V1ContainerPort();
         port.containerPort(exposedPort);
         container.setPorts(Collections.singletonList(port));
 
@@ -127,7 +123,7 @@ public class BaseK8sTest {
         }
     }
 
-    private CoreV1Api getK8sApi() throws K8sTestException {
+    private AppsV1Api getK8sApi() throws K8sTestException {
         LOGGER.info("connecting to K8s cluster");
         // get user home
         final String home = System.getProperty(HOME_PROPERTY);
@@ -142,8 +138,8 @@ public class BaseK8sTest {
             Configuration.setDefaultApiClient(client);
             client.setVerifyingSsl(false);
 
-            // the CoreV1Api loads default api-client from global configuration
-            return new CoreV1Api();
+            // the AppsV1Api loads default api-client from global configuration
+            return new AppsV1Api();
         } catch (final Exception ex) {
             throw new K8sTestException("error getting k8s configuration", ex);
         }

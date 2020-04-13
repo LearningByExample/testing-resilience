@@ -14,15 +14,14 @@ import org.slf4j.LoggerFactory;
 import java.io.FileReader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class BaseK8sTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseK8sTest.class);
     private static final String HOME_PROPERTY = "user.home";
     private static final String KUBE_CONFIG = "/.kube/config";
+    private static final String PROPAGATION_POLICY_BACKGROUND = "Background";
+    private static final String IMAGE_PULL_POLICY_ALWAYS = "Always";
 
 
     private final CoreV1Api api;
@@ -40,45 +39,41 @@ public class BaseK8sTest {
         }
     }
 
-    /*
-    private List<V1Pod> getPods() throws K8sTestException {
-        LOGGER.info("getting pods");
-        final String label = "app=" + APP_NAME;
-
+    private List<V1Deployment> getDeployments(final String namespace, final String app) throws K8sTestException {
+        LOGGER.info("getting deployments for application: {} in namespace: {}", app, namespace);
+        final String label = "app=" + app;
         try {
-            final V1PodList v1PodList = api.listNamespacedPod(DEFAULT_NAME_SPACE, null, false, null, null, label, null, null, null, false);
-            return v1PodList.getItems();
+            final V1DeploymentList v1DeploymentList = appsV1Api.listNamespacedDeployment(namespace, null, false, null, null, label, null, null, null, null);
+            return v1DeploymentList.getItems();
         } catch (final ApiException ex) {
             throw new K8sTestException(ex.getResponseBody(), ex);
         }
     }
 
-    public boolean podsExists() throws K8sTestException {
-        LOGGER.info("checking if pod exist");
-        final boolean result = getPods().size() > 0;
-        LOGGER.info("pod exists: {}", result);
+    public boolean checkIfDeploymentsExits(final String namespace, final String app) throws K8sTestException {
+        LOGGER.info("checking if deployments exit for application: {} in namespace: {}", app, namespace);
+        final boolean result = getDeployments(namespace, app).size() > 0;
+        LOGGER.info("deployments exit for application: {} in namespace: {} is: {}", app, namespace, result);
         return result;
     }
 
-    public void deletePods() throws K8sTestException {
-        LOGGER.info("deleting pods");
+    public void deleteDeployments(final String namespace, final String app) throws K8sTestException {
         try {
-            for (final V1Pod pod : getPods()) {
-                LOGGER.info("deleting pod: {}", Objects.requireNonNull(pod.getMetadata()).getName());
-
-                final V1DeleteOptions v1DeleteOptions = new V1DeleteOptions();
-                v1DeleteOptions.setApiVersion("v1");
-                v1DeleteOptions.setOrphanDependents(true);
-                api.deleteNamespacedPod(pod.getMetadata().getName(), DEFAULT_NAME_SPACE, null, null, null, true, null, null);
+            LOGGER.info("deleting deployments for application: {} in namespace: {}", app, namespace);
+            final List<V1Deployment> deployments = getDeployments(namespace, app);
+            for (V1Deployment deployment : deployments) {
+                final String name = Objects.requireNonNull(deployment.getMetadata()).getName();
+                LOGGER.info("deleting deployment: {}", name);
+                appsV1Api.deleteNamespacedDeployment(name, namespace, null, null, 0, null, PROPAGATION_POLICY_BACKGROUND, null);
             }
+
         } catch (final ApiException ex) {
             throw new K8sTestException(ex.getResponseBody(), ex);
-        } catch (final JsonSyntaxException ignore) {
-            LOGGER.warn("ignoring JsonSyntaxException due bug on kubernetes Swagger api https://github.com/kubernetes-client/java/issues/252");
         }
-    }*/
+    }
 
     public void createDeployment(final String namespace, final String appName, final String deploymentName, final String image, int exposedPort, int replicas) throws K8sTestException {
+        LOGGER.info("creating deployment: {} for application: {} in namespace: {}", deploymentName, appName, namespace);
         // deployment
         final V1Deployment deployment = new V1Deployment();
 
@@ -108,6 +103,7 @@ public class BaseK8sTest {
         final V1Container container = new V1Container();
         container.setName(deploymentName);
         container.setImage(image);
+        container.setImagePullPolicy(IMAGE_PULL_POLICY_ALWAYS);
 
         //port
         V1ContainerPort port = new V1ContainerPort();
@@ -130,38 +126,6 @@ public class BaseK8sTest {
             throw new K8sTestException(ex.getResponseBody(), ex);
         }
     }
-
-    /*
-    public void createDatabase() throws K8sTestException {
-        LOGGER.info("creating database");
-        final V1Pod pod = new V1Pod();
-        pod.setApiVersion("v1");
-        pod.setKind("Pod");
-
-        final V1ObjectMeta metadata = new V1ObjectMeta();
-        metadata.setName(POSTGRES_POD);
-        final HashMap<String, String> labels = new HashMap<>();
-        labels.put("app", APP_NAME);
-        metadata.setLabels(labels);
-        pod.setMetadata(metadata);
-
-        final V1PodSpec spec = new V1PodSpec();
-        spec.setContainers(new ArrayList<>());
-        V1Container container = new V1Container();
-        container.setName(POSTGRES_IMG);
-        container.setImage(POSTGRES_BASE_IMAGE);
-        V1ContainerPort port = new V1ContainerPort();
-        port.containerPort(5432);
-        container.setPorts(Collections.singletonList(port));
-
-        spec.getContainers().add(container);
-        pod.setSpec(spec);
-        try {
-            api.createNamespacedPod(DEFAULT_NAME_SPACE, pod, null, null, null);
-        } catch (final ApiException ex) {
-            throw new K8sTestException(ex.getResponseBody(), ex);
-        }
-    }*/
 
     private CoreV1Api getK8sApi() throws K8sTestException {
         LOGGER.info("connecting to K8s cluster");

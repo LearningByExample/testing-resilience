@@ -21,6 +21,7 @@ public class BaseK8sTest {
     private static final String KUBE_CONFIG = "/.kube/config";
     private static final String PROPAGATION_POLICY_BACKGROUND = "Background";
     private static final String IMAGE_PULL_POLICY_ALWAYS = "Always";
+    private static final String APP_LABEL = "app";
 
 
     final AppsV1Api appsV1Api;
@@ -37,7 +38,7 @@ public class BaseK8sTest {
 
     private List<V1Deployment> getDeployments(final String namespace, final String app) throws K8sTestException {
         LOGGER.info("getting deployments for application: {} in namespace: {}", app, namespace);
-        final String label = "app=" + app;
+        final String label = APP_LABEL + '=' + app;
         try {
             final V1DeploymentList v1DeploymentList = appsV1Api.listNamespacedDeployment(namespace, null, false, null, null, label, null, null, null, null);
             return v1DeploymentList.getItems();
@@ -70,51 +71,54 @@ public class BaseK8sTest {
 
     public void createDeployment(final String namespace, final String appName, final String deploymentName, final String image, int exposedPort, int replicas) throws K8sTestException {
         LOGGER.info("creating deployment: {} for application: {} in namespace: {}", deploymentName, appName, namespace);
-        // deployment
-        final V1Deployment deployment = new V1Deployment();
+
+        // labels
+        final HashMap<String, String> labels = new HashMap<>();
+        labels.put(APP_LABEL, appName);
 
         // deployment meta-data
         final V1ObjectMeta metadata = new V1ObjectMeta();
         metadata.setName(deploymentName);
-        final HashMap<String, String> labels = new HashMap<>();
-        labels.put("app", appName);
         metadata.setLabels(labels);
-        deployment.setMetadata(metadata);
 
-        // deployment spec
-        final V1DeploymentSpec spec = new V1DeploymentSpec();
-        final V1LabelSelector labelSelector = new V1LabelSelector();
-        labelSelector.setMatchLabels(labels);
-        spec.setSelector(labelSelector);
-
-        // template spec
-        final V1PodTemplateSpec podTemplateSpec = new V1PodTemplateSpec();
-        podTemplateSpec.setMetadata(metadata);
-
-        // pod spec
-        final V1PodSpec podSpec = new V1PodSpec();
-        final List<V1Container> containers = new ArrayList<>();
+        //port
+        final V1ContainerPort port = new V1ContainerPort();
+        port.containerPort(exposedPort);
 
         // container
         final V1Container container = new V1Container();
         container.setName(deploymentName);
         container.setImage(image);
         container.setImagePullPolicy(IMAGE_PULL_POLICY_ALWAYS);
-
-        //port
-        final V1ContainerPort port = new V1ContainerPort();
-        port.containerPort(exposedPort);
         container.setPorts(Collections.singletonList(port));
 
+        // containers
+        final List<V1Container> containers = new ArrayList<>();
         containers.add(container);
+
+        // pod spec
+        final V1PodSpec podSpec = new V1PodSpec();
         podSpec.setContainers(containers);
+
+        // template spec
+        final V1PodTemplateSpec podTemplateSpec = new V1PodTemplateSpec();
+        podTemplateSpec.setMetadata(metadata);
         podTemplateSpec.setSpec(podSpec);
 
-        spec.setTemplate(podTemplateSpec);
-        deployment.setSpec(spec);
+        // label selector
+        final V1LabelSelector labelSelector = new V1LabelSelector();
+        labelSelector.setMatchLabels(labels);
 
-        // replicas
+        // deployment spec
+        final V1DeploymentSpec spec = new V1DeploymentSpec();
+        spec.setSelector(labelSelector);
+        spec.setTemplate(podTemplateSpec);
         spec.setReplicas(replicas);
+
+        // deployment
+        final V1Deployment deployment = new V1Deployment();
+        deployment.setMetadata(metadata);
+        deployment.setSpec(spec);
 
         try {
             appsV1Api.createNamespacedDeployment(namespace, deployment, null, null, null);

@@ -12,19 +12,13 @@ import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.models.*;
 import io.kubernetes.client.util.ClientBuilder;
-import io.kubernetes.client.util.KubeConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileReader;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 
 public class BaseK8sTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseK8sTest.class);
-    private static final String HOME_PROPERTY = "user.home";
-    private static final String KUBE_CONFIG = "/.kube/config";
     private static final String PROPAGATION_POLICY_BACKGROUND = "Background";
     private static final String IMAGE_PULL_POLICY_ALWAYS = "Always";
     private static final String APP_LABEL = "app";
@@ -137,14 +131,9 @@ public class BaseK8sTest {
 
     private AppsV1Api getK8sApi() throws K8sTestException {
         LOGGER.info("connecting to K8s cluster");
-        // get user home
-        final String home = System.getProperty(HOME_PROPERTY);
-
-        // get kube config
-        final Path configPath = Paths.get(home, KUBE_CONFIG);
-        try (final FileReader configReader = new FileReader(configPath.toString())) {
+        try {
             // loading the out-of-cluster config
-            final ApiClient client = ClientBuilder.kubeconfig(KubeConfig.loadKubeConfig(configReader)).build();
+            final ApiClient client = ClientBuilder.standard().build();
 
             // set the global default api-client to the in-cluster one from above
             Configuration.setDefaultApiClient(client);

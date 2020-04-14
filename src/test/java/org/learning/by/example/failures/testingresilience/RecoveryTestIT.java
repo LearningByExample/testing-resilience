@@ -55,7 +55,7 @@ public class RecoveryTestIT extends BasePostgreSQLTestIT {
         assertOffersAre(INITIAL_OFFERS);
 
         startDatabase();
-        loadInitData();;
+        loadInitData();
         addVanillaCookies();
         assertServiceIsReady(true);
         assertOffersAre(ADDITIONAL_OFFERS);

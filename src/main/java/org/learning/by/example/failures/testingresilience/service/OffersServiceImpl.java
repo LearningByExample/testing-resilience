@@ -26,7 +26,8 @@ public class OffersServiceImpl implements OffersService {
     private final ReactiveCircuitBreaker circuitBreaker;
 
     @SuppressWarnings("rawtypes")
-    public OffersServiceImpl(final OffersRepository offersRepository, final ReactiveCircuitBreakerFactory reactiveCircuitBreakerFactory) {
+    public OffersServiceImpl(final OffersRepository offersRepository,
+                             final ReactiveCircuitBreakerFactory reactiveCircuitBreakerFactory) {
         this.offersRepository = offersRepository;
         this.circuitBreaker = reactiveCircuitBreakerFactory.create(CIRCUIT_BREAKER_ID);
         this.offersFallback = new ConcurrentLinkedDeque<>(emptyOffers);

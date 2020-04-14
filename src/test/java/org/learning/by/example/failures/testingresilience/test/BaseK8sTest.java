@@ -42,7 +42,8 @@ public class BaseK8sTest {
         LOGGER.info("getting deployments for application: {} in namespace: {}", app, namespace);
         final String label = APP_LABEL + '=' + app;
         try {
-            final V1DeploymentList v1DeploymentList = appsV1Api.listNamespacedDeployment(namespace, null, false, null, null, label, null, null, null, null);
+            final V1DeploymentList v1DeploymentList = appsV1Api.listNamespacedDeployment(namespace, null, false, null
+                , null, label, null, null, null, null);
             return v1DeploymentList.getItems();
         } catch (final ApiException ex) {
             throw new K8sTestException(ex.getResponseBody(), ex);
@@ -63,7 +64,8 @@ public class BaseK8sTest {
             for (V1Deployment deployment : deployments) {
                 final String name = Objects.requireNonNull(deployment.getMetadata()).getName();
                 LOGGER.info("deleting deployment: {}", name);
-                appsV1Api.deleteNamespacedDeployment(name, namespace, null, null, 0, null, PROPAGATION_POLICY_BACKGROUND, null);
+                appsV1Api.deleteNamespacedDeployment(name, namespace, null, null, 0, null,
+                    PROPAGATION_POLICY_BACKGROUND, null);
             }
 
         } catch (final ApiException ex) {
@@ -71,7 +73,8 @@ public class BaseK8sTest {
         }
     }
 
-    public void createDeployment(final String namespace, final String appName, final String deploymentName, final String image, int exposedPort, int replicas) throws K8sTestException {
+    public void createDeployment(final String namespace, final String appName, final String deploymentName,
+                                 final String image, int exposedPort) throws K8sTestException {
         LOGGER.info("creating deployment: {} for application: {} in namespace: {}", deploymentName, appName, namespace);
 
         // labels
@@ -115,7 +118,6 @@ public class BaseK8sTest {
         final V1DeploymentSpec spec = new V1DeploymentSpec();
         spec.setSelector(labelSelector);
         spec.setTemplate(podTemplateSpec);
-        spec.setReplicas(replicas);
 
         // deployment
         final V1Deployment deployment = new V1Deployment();

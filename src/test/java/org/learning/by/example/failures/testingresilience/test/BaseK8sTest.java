@@ -1,5 +1,11 @@
 package org.learning.by.example.failures.testingresilience.test;
 
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.command.DockerCmdExecFactory;
+import com.github.dockerjava.api.model.Info;
+import com.github.dockerjava.core.DefaultDockerClientConfig;
+import com.github.dockerjava.core.DockerClientBuilder;
+import com.github.dockerjava.netty.NettyDockerCmdExecFactory;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
@@ -25,9 +31,11 @@ public class BaseK8sTest {
 
 
     final AppsV1Api appsV1Api;
+    final DockerClient dockerClient;
 
     public BaseK8sTest() throws K8sTestException {
         this.appsV1Api = getK8sApi();
+        this.dockerClient = getDockerClient();
     }
 
     public static class K8sTestException extends Exception {
@@ -147,5 +155,27 @@ public class BaseK8sTest {
         } catch (final Exception ex) {
             throw new K8sTestException("error getting k8s configuration", ex);
         }
+    }
+
+    private DockerClient getDockerClient() throws K8sTestException {
+        LOGGER.info("getting docker client");
+
+        try {
+            final DefaultDockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
+                .build();
+
+            final DockerCmdExecFactory dockerCmdExecFactory = new NettyDockerCmdExecFactory();
+
+            return DockerClientBuilder.getInstance(config)
+                .withDockerCmdExecFactory(dockerCmdExecFactory)
+                .build();
+        } catch (Exception ex) {
+            throw new K8sTestException("error getting docker client", ex);
+        }
+    }
+
+    protected void printDockerVersion() {
+        final Info info = dockerClient.infoCmd().exec();
+        LOGGER.debug("Docker version: {}", info.getServerVersion());
     }
 }

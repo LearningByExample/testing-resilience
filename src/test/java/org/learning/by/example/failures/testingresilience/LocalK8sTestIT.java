@@ -22,6 +22,11 @@ public class LocalK8sTestIT extends BaseK8sTest {
     }
 
     @Test
+    void docker() {
+        printDockerVersion();
+    }
+
+    @Test
     @DisplayName("We should test in K8s")
     public void weShouldTestInK8s() throws Exception {
         if (checkIfDeploymentsExits(DEFAULT_NAME_SPACE, APP_NAME)) {
